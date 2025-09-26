@@ -3,7 +3,7 @@
 # ERHA7016 – Hidrologia Estocástica
 # Autor: Daniel Detzel
 # Data: 16 set. 2025
-# Aula 1: Introdução - conceitos iniciais e revisão de estatística
+# Aula 1: Introdução (pt. 1)
 
 # Bibliotecas utilizadas
 library(ggplot2)   # para os gráficos
@@ -12,8 +12,7 @@ library(hydroTSM)  # para séries hidrológicas
 library(zoo)       # para interpretação de dados em formato 'zoo'
 library(longmemo)  # para série dos níveis mínimos do rio Nilo
 library(tidyr)     # para manejo de dados
-library(goftest)   # para de Anderson-Darling 
-library(ppcc)      # para teste de PPCC
+
 
 # Modelos determinísticos e estocásticos ----------------------------------
 
@@ -487,23 +486,4 @@ ggplot(pontos, aes(y = amostra)) +
   theme_gray()
 # dev.off()
 
-# |------------------------------------------|
-# |12. Testes de hipótese                    |
-# |    Shapiro-Wilk, Anderson-Darling e PPCC |
-# |------------------------------------------|
 
-# 12.1. Verificação quanto à normalidade
-# Shapiro-Wilk
-shapiro.test(serie$x)
-# Anderson-Darling
-ad.test(serie$x, null = "pnorm", mean = mean(serie$x),
-        sd = sd(serie$x), estimated = TRUE)
-# PPCC
-ppccTest(serie$x, qfn = "qnorm")
-
-# 12.2. Verificação quanto à log-normalidade
-# Anderson-Darling
-ad.test(serie$x, null = "plnorm", meanlog = mean(log(serie$x)),
-         sdlog = sd(log(serie$x)), estimated = TRUE)
-# PPCC
-ppccTest(serie$x, qfn = "qlnorm")
