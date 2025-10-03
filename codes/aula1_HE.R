@@ -466,7 +466,7 @@ teoricoN <- qnorm(p, mean = mean(serie$x), sd = sd(serie$x))
 teoricoLN <- qlnorm(p, meanlog = mean(log(serie$x)), sdlog = sd(log(serie$x)))
 
 # Criação do data frame
-pontos <- data.frame(amostra = sort(x),
+pontos <- data.frame(amostra = sort(serie$x),
                      N = teoricoN,
                      LN = teoricoLN)
 
