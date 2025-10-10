@@ -11,12 +11,13 @@ library(dplyr)      # manejo de dados
 library(hydroTSM)   # para conversão de vazões entre escalas temporais
 library(modifiedmk) # para o teste de Mann-Kendall (e variações)
 library(forecast)   # para simulações de séries não estacionárias
-library(patchwork)  # para ajustes de gráficos lado a lado
-library(Rlibeemd)   # para decomposição de séries via CEEMDAN
 
 # Função utilizada
 source("cod2serieMensal.R") # extração dos dados de vazão do ONS
 
+# Leitura dos dados (usados em diferentes partes do código)
+Qmensal <- read.csv("Vazoes_Mensais_1931_2023.csv",
+                    check.names = FALSE)
 
 # Tendências --------------------------------------------------------------
 
@@ -24,10 +25,6 @@ source("cod2serieMensal.R") # extração dos dados de vazão do ONS
 # |1. Série com tendência vs. série sem tendência            |
 # |   vazões médias mensais afluentes a usinas hidrelétricas |
 # |----------------------------------------------------------|
-
-# Leitura dos dados
-Qmensal <- read.csv("Vazoes_Mensais_1931_2023.csv",
-                    check.names = FALSE)
 
 # Chamada da função que extrai a série de vazões para uma usina específica,
 # a partir do fornecimento do seu código ONS
@@ -114,9 +111,6 @@ resMK <- data.frame(Original = round(mkOriginal[5],digits = 3),
                     Yue_et_al = round(mkTFPW[4], digits = 3),
                     Hamed_Rao = round(mkHR[2], digits = 3))
 print(resMK)
-
-
-
 
 # Transformações numéricas ------------------------------------------------
 
@@ -267,120 +261,5 @@ p1 + p2
 # dev.off()
 
 
-# Decomposição ------------------------------------------------------------
 
-# |------------------------------------|
-# |6. Decomposição de séries temporais |
-# |   clássica, STL e CEEMDAN          |
-# |------------------------------------|
-
-# Uso de séries mensais
-serie <- cod2serieMensal(Qmensal,169) # Sobradinho
-vazao <- serie$Vazao
-tempo <- serie$Ano + (serie$Mes - 1)/12
-
-# É preciso transformar a série para um formato 'ts' (time series)
-serieTS <- ts(vazao, start = c(min(serie$Ano), 1), frequency = 12)
-
-# 6.1. Decomposição clássica
-decClassica <- decompose(serieTS, type = "additive")
-
-# Montagem do data frame
-classica <- data.frame(tempo = rep(tempo, 4),
-                       valor = c(vazao,
-                                 decClassica$trend,
-                                 decClassica$seasonal,
-                                 decClassica$random),
-                       componente = factor(rep(c("Obs.",
-                                                 "Tend.",
-                                                 "Saz.",
-                                                 "Res."),
-                                           each = length(tempo)),
-                                           levels = c("Obs.",
-                                                      "Tend.",
-                                                      "Saz.",
-                                                      "Res.")))
-
-# Obtenção dos gráficos
-# tiff('decomposicaoClassica.tif', height=720, width = 1780, res=300)
-ggplot(classica, aes(x = tempo, y = valor, color = componente)) +
-  geom_line() +
-  facet_wrap(~componente, ncol = 1, scales = "free_y", strip.position = "right") +
-  scale_color_manual(
-    values = c(
-      "Obs."      = "firebrick",
-      "Tend."     = "darkgreen",
-      "Saz."  = "steelblue",
-      "Res."       = "gray50")) +
-  labs(x = "Ano", y = "Vazão [m³/s]") +
-  theme_gray() +
-  theme(legend.position = "none")
-# dev.off()
-
-# 6.2. Decomposição STL
-# Sazonalidade periódica e tendência suavizada com período de 10 anos
-stl <- stl(serieTS, s.window = "periodic", t.window = 120)
-
-# Montagem do data frame
-decSTL <- data.frame(tempo = rep(tempo, 4),
-                     valor = c(vazao,
-                               stl$time.series[,"trend"],
-                               stl$time.series[,"seasonal"],
-                               stl$time.series[,"remainder"]),
-                       componente = factor(rep(c("Obs.",
-                                                 "Tend.",
-                                                 "Saz.",
-                                                 "Res."),
-                                               each = length(tempo)),
-                                               levels = c("Obs.",
-                                                      "Tend.",
-                                                      "Saz.",
-                                                      "Res.")))
-
-# Obtenção dos gráficos
-# tiff('decomposicaoSTL.tif', height=720, width = 1780, res=300)
-ggplot(decSTL, aes(x = tempo, y = valor, color = componente)) +
-  geom_line() +
-  facet_wrap(~componente, ncol = 1, scales = "free_y", strip.position = "right") +
-  scale_color_manual(
-    values = c(
-      "Obs."      = "firebrick",
-      "Tend."     = "darkgreen",
-      "Saz."  = "steelblue",
-      "Res."       = "gray50")) +
-  labs(x = "Ano", y = "Vazão [m³/s]") +
-  theme_gray() +
-  theme(legend.position = "none")
-# dev.off()
-
-# 6.3. Decomposição CEEMDAN
-# Usando 6 IMFs (intrinsic mode functions)
-ceemdan <- ceemdan(serieTS, num_imfs = 6)
-
-# Montagem do data frame
-decCEEMDAN <- data.frame(tempo = rep(tempo, ncol(ceemdan) + 1),
-                         valor = c(vazao, as.vector(ceemdan)),
-                         componente = factor(c("Obs.",
-                                              paste0("IMF", 1:ncol(ceemdan))),
-                                            levels = c("Obs.",
-                                                       paste0("IMF", 1:ncol(ceemdan)))
-                                            ) %>% rep(each = length(tempo)))
-
-# Obtenção dos gráficos
-# tiff('decomposicaoCEEMDAN.tif', height=1147, width = 1780, res=300)
-ggplot(decCEEMDAN, aes(x = tempo, y = valor, color = componente)) +
-  geom_line() +
-  facet_wrap(~componente, ncol = 1, scales = "free_y", strip.position = "right") +
-  scale_color_manual(
-    values = c(
-      "Obs." = "firebrick",
-      "IMF1"     = "gray50",
-      "IMF2"     = "gray50",
-      "IMF3"     = "gray50",
-      "IMF4"     = "gray50",
-      "IMF5"     = "gray50",
-      "IMF6"     = "gray50")) +
-  labs(subtitle = "Decomposição CEEMDAN", x = "Ano", y = "Vazão [m³/s]", color = "Componente") +
-  theme_gray()
-# dev.off()
 
