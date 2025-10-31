@@ -3,14 +3,14 @@
 # ERHA7016 – Hidrologia Estocástica
 # Autor: Daniel Detzel
 # Data: 14 out. 2025
-# Aula 4: Geração de Séries Sintéticas (pt. 2)
+# Aula 5: Geração de Séries Sintéticas (pt. 2)
 
 # Bibliotecas utilizadas
 library(tidyverse)  # contém diversas bibliotecas, incluindo ggplot2
 library(patchwork)  # para ajustes de gráficos lado a lado
 library(forecast)   # para modelos ARIMA
 library(dplyr)      # manejo de dados
-library(lmtest)     # manejo de dados
+library(lmtest)     # teste de Breusch-Pagan
 
 # Estimação de parâmetros -------------------------------------------------
 
